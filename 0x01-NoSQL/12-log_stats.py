@@ -1,19 +1,25 @@
 #!/usr/bin/env python3
-"""Print info f nginx logs """
+""" Write a Python script that provides some stats about
+    Nginx logs stored in MongoDB
+"""
 from pymongo import MongoClient
 
 if __name__ == "__main__":
-    """ check for all elements in a collection """
+    """ Database: logs
+        Collection: nginx
+    """
     client = MongoClient('mongodb://127.0.0.1:27017')
-    collection = client.logs.nginx
+    nginx_collection = client.logs.nginx
 
-    print(f"{collection.estimated_document_count()} logs")
+    n_logs = nginx_collection.count_documents({})
+    print(f'{n_logs} logs')
+    methods = ["GET", "POST", "PUT", "PATCH", "DELETE"]
+    print('Methods:')
+    for method in methods:
+        count = nginx_collection.count_documents({"method": method})
+        print(f'\tmethod {method}: {count}')
 
-    print("Methods:")
-    for method in ["GET", "POST", "PUT", "PATCH", "DELETE"]:
-        method_count = collection.count_documents({'method': method})
-        print(f"\tmethod {method}: {method_count}")
-
-    check_get = collection.count_documents(
-        {'method': 'GET', 'path': "/status"})
-    print(f"{check_get} status check")
+    status_check = nginx_collection.count_documents(
+        {"method": "GET", "path": "/status"}
+        )
+    print(f'{status_check} status check')
