@@ -16,3 +16,7 @@ if __name__ == "__main__":
 
     print("{} status check".format(db.nginx.count_documents(
         {"method": "GET", "path": "/status"})))
+    
+    finally:
+        # Close the MongoDB connection when done
+        client.close()
