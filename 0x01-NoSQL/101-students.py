@@ -1,24 +1,21 @@
 #!/usr/bin/env python3
+"""returns all students sorted by score"""
 
-from pymongo import MongoClient
 
 def top_students(mongo_collection):
-    pipeline = [
+    """ List all students sorted by score """
+    return mongo_collection.aggregate([
         {
-            "$project": {
-                "name": 1,
-                "averageScore": { "$avg": "$topics.score" }
+            '$project': {
+                'name': '$name',
+                'averageScore': {
+                    '$avg': "$topics.score"
+                }
             }
         },
         {
-            "$sort": { "averageScore": -1 }
+            '$sort': {
+                "averageScore": -1
+            }
         }
-    ]
-
-    top_students = list(mongo_collection.aggregate(pipeline))
-    return top_students
-
-if __name__ == "__main__":
-    client = MongoClient('mongodb://127.0.0.1:27017')
-    students_collection = client.my_db.students
-
+    ])
