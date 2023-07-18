@@ -1,20 +1,2 @@
-// find_holberton.js
-
-// Check if the database name is provided as a command-line argument
-if (typeof db_name === 'undefined') {
-  print("Usage: mongo " + scriptArgs[0] + " <database_name>");
-  quit();
-}
-
-// Connect to the specified database
-var conn = new Mongo();
-var db = conn.getDB(db_name);
-
-// Find all documents with names starting with "Holberton"
-var cursor = db.school.find({ name: { $regex: /^Holberton/i } });
-
-// Iterate over the result and print each document
-while (cursor.hasNext()) {
-  printjson(cursor.next());
-}
-
+// Finds all documents that starts in Holberon
+db.school.find({ "name" : { $regex: /^Holberton/ } })
