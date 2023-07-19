@@ -9,6 +9,7 @@ from typing import Callable
 # Connect to the Redis server
 redis_client = redis.Redis(host='localhost', port=6379, db=0)
 
+
 def count_url_access(method: Callable) -> Callable:
     """
     Decorator to track the number of times a particular URL is accessed.
@@ -26,7 +27,10 @@ def count_url_access(method: Callable) -> Callable:
         cached_key = f"cached:{url}"
 
         # Increment the URL access count
-        redis_client.incr(count_key)
+        response = redis_client.incr(count_key)
+        if response == 1:
+            # Set expiration time for the count_key only when it's newly created
+            redis_client.expire(count_key, 10)
 
         # Check if the result is already cached
         cached_result = redis_client.get(cached_key)
@@ -42,6 +46,7 @@ def count_url_access(method: Callable) -> Callable:
         return html_content
 
     return wrapper
+
 
 @count_url_access
 def get_page(url: str) -> str:
