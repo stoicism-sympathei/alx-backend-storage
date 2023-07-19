@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-""" Exercise module. """
-from typing import Callable, Optional, Union
-from functools import wraps
+""" Combined module for Redis db and Cache class """
+
 import redis
-import uuid
+from uuid import uuid4
+from typing import Union, Callable, Optional
+from functools import wraps
+
+UnionOfTypes = Union[str, bytes, int, float]
 
 
 def count_calls(method: Callable) -> Callable:
@@ -52,40 +55,34 @@ def replay(method: Callable):
 
 
 class Cache:
-    """ Class for methods that operate a caching system """
+    """ Cache class. """
 
-    def __init__(self):
-        """ Instance of Redis db """
+    def __init__(self) -> None:
         self._redis = redis.Redis()
         self._redis.flushdb()
 
     @count_calls
     @call_history
-    def store(self,
-              data: UnionOfTypes) -> str:
-        """
-        Method takes a data argument and returns a string
-        Generate a random key (e.g. using uuid), store the input data in Redis
-        using the random key and return the key
-        """
+    def store(self, data: UnionOfTypes) -> str:
+        """ Store the input data and return the random key. """
         key = str(uuid4())
-        self._redis.mset({key: data})
+        self._redis.set(key, data)
+
         return key
 
-    def get(self,
-            key: str,
-            fn: Optional[Callable] = None) -> UnionOfTypes:
-        """
-        Retrieves data stored at a key
-        converts the data back to the desired format
-        """
-        data = self._redis.get(key)
-        return fn(data) if fn else data
+    def get(self, key: str, *fn: Optional[Callable]) -> Union[str, bytes, int, float]:
+        """ Convert the data back to the desired format. """
+        if fn:
+            data = self._redis.get(key)
+            return fn[0](data)
 
-    def get_str(self, data: str) -> str:
-        """ get a string """
+        return self._redis.get(key)
+
+    def get_str(self, key: str) -> str:
+        """ Converts the key to a str. """
         return self.get(key, str)
 
-    def get_int(self, data: str) -> int:
-        """ get an int """
+    def get_int(self, key: str) -> int:
+        """ Converts the key to an int. """
         return self.get(key, int)
+
