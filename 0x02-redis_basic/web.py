@@ -1,35 +1,59 @@
 #!/usr/bin/env python3
 """ Redis with requests """
+
 import requests
+import redis
 from functools import wraps
 from typing import Callable
-import redis
 
-def count(method: Callable) -> Callable:
-    """ Count the call to requests """
-    r = redis.Redis()
+# Connect to the Redis server
+redis_client = redis.Redis(host='localhost', port=6379, db=0)
 
+def count_url_access(method: Callable) -> Callable:
+    """
+    Decorator to track the number of times a particular URL is accessed.
+    Increments a counter for each URL and sets its expiration time to 10 seconds.
+
+    Args:
+        method (Callable): The function to be decorated.
+
+    Returns:
+        Callable: The decorated function.
+    """
     @wraps(method)
-    def wrapped(url: str) -> str:
-        """ function that will count """
+    def wrapper(url: str) -> str:
         count_key = f"count:{url}"
         cached_key = f"cached:{url}"
-        
-        r.incr(count_key)
-        expiration_count = r.get(cached_key)
 
-        if expiration_count:
-            return expiration_count.decode('utf-8')
+        # Increment the URL access count
+        redis_client.incr(count_key)
 
-        html = method(url)
-        r.setex(cached_key, 10, html)
+        # Check if the result is already cached
+        cached_result = redis_client.get(cached_key)
+        if cached_result:
+            return cached_result.decode()
 
-        return html
+        # Fetch the HTML content using requests
+        html_content = method(url)
 
-    return wrapped
+        # Cache the HTML content with an expiration time of 10 seconds
+        redis_client.setex(cached_key, 10, html_content)
 
-@count
+        return html_content
+
+    return wrapper
+
+@count_url_access
 def get_page(url: str) -> str:
-    """ module to obtain the HTML """
-    return requests.get(url).text
+    """
+    Fetches the HTML content of a given URL using the requests module.
+
+    Args:
+        url (str): The URL to fetch.
+
+    Returns:
+        str: The HTML content of the URL.
+    """
+    response = requests.get(url)
+    return response.text
 
