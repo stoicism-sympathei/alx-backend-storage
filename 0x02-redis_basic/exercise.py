@@ -51,34 +51,41 @@ def replay(method: Callable):
         print(f"{m_name}(*{k.decode('utf-8')}) -> {v.decode('utf-8')}")
 
 
-class Cache():
-    """ Cache class. """
+class Cache:
+    """ Class for methods that operate a caching system """
 
-    def __init__(self) -> None:
+    def __init__(self):
+        """ Instance of Redis db """
         self._redis = redis.Redis()
         self._redis.flushdb()
 
     @count_calls
     @call_history
-    def store(self, data: Union[str, bytes, int, float]) -> str:
-        """ Store the input data and return the random key. """
-        key = str(uuid.uuid4())
-        self._redis.set(key, data)
-
+    def store(self,
+              data: UnionOfTypes) -> str:
+        """
+        Method takes a data argument and returns a string
+        Generate a random key (e.g. using uuid), store the input data in Redis
+        using the random key and return the key
+        """
+        key = str(uuid4())
+        self._redis.mset({key: data})
         return key
 
-    def get(self, key: str, *fn: Optional[Callable]) -> Union[str, bytes, int, float]:
-        """ Convert the data back to the desired format. """
-        if fn:
-            data = self._redis.get(key)
-            return fn(data)
+    def get(self,
+            key: str,
+            fn: Optional[Callable] = None) -> UnionOfTypes:
+        """
+        Retrieves data stored at a key
+        converts the data back to the desired format
+        """
+        data = self._redis.get(key)
+        return fn(data) if fn else data
 
-        return self._redis.get(key)
-
-    def get_str(self, key: str) -> str:
-        """ Converts the key to a str. """
+    def get_str(self, data: str) -> str:
+        """ get a string """
         return self.get(key, str)
 
-    def get_int(self, key: str) -> int:
-        """ Converts the key to an int. """
+    def get_int(self, data: str) -> int:
+        """ get an int """
         return self.get(key, int)
