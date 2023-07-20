@@ -26,18 +26,18 @@ def count_url_access(method: Callable) -> Callable:
         cached_key = f"cached:{url}"
 
         # Increment the URL access count
-        redis_client.incr(count_key)
+        count = redis_client.incr(count_key)
 
-        # Check if the result is already cached
-        cached_result = redis_client.get(cached_key)
-        if cached_result:
-            return cached_result.decode()
+        # Fetch the current count
+        if count == 1:
+            # Fetch the HTML content using requests if it's the first access
+            html_content = method(url)
 
-        # Fetch the HTML content using requests
-        html_content = method(url)
-
-        # Cache the HTML content with an expiration time of 10 seconds
-        redis_client.setex(cached_key, 10, html_content)
+            # Cache the HTML content with an expiration time of 10 seconds
+            redis_client.setex(cached_key, 10, html_content)
+        else:
+            # Get the cached HTML content
+            html_content = redis_client.get(cached_key).decode()
 
         return html_content
 
@@ -56,4 +56,3 @@ def get_page(url: str) -> str:
     """
     response = requests.get(url)
     return response.text
-
