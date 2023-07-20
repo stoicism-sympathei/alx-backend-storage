@@ -10,6 +10,7 @@ from typing import Callable
 redis_client = redis.Redis(host='localhost', port=6379, db=0)
 
 def count_url_access(method: Callable) -> Callable:
+    
     """
     Decorator to track the number of times a particular URL is accessed.
     Increments a counter for each URL and sets its expiration time to 10 seconds.
@@ -45,6 +46,7 @@ def count_url_access(method: Callable) -> Callable:
 
 @count_url_access
 def get_page(url: str) -> str:
+    
     """
     Fetches the HTML content of a given URL using the requests module.
 
